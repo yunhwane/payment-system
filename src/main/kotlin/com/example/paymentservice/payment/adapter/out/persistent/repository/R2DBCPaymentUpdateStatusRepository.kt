@@ -142,7 +142,7 @@ class R2DBCPaymentUpdateStatusRepository(
     companion object{
         val SELECT_PAYMENT_ORDER_STATUS_QUERY = """
             SELECT id, payment_order_status
-            FROM payment_order
+            FROM payment_orders
             WHERE order_id = :orderId
         """.trimIndent()
 
@@ -152,14 +152,13 @@ class R2DBCPaymentUpdateStatusRepository(
         """.trimIndent()
 
         val UPDATE_PAYMENT_ORDER_STATUS_QUERY = """
-            UPDATE payment_orders SET payment_order_status = :status, update_at = current_timestamp
+            UPDATE payment_orders SET payment_order_status = :status, updated_at = current_timestamp
             WHERE order_id = :orderId
         """.trimIndent()
 
         val UPDATE_PAYMENT_KEY_QUERY = """
             UPDATE payment_events 
-            SET payment_key = :paymentKey,
-            WHERE order_id = :orderId
+            SET payment_key = :paymentKey WHERE order_id = :orderId
         """.trimIndent()
 
 

@@ -4,6 +4,7 @@ import com.example.paymentservice.payment.adapter.out.persistent.exception.Payme
 import org.springframework.r2dbc.core.DatabaseClient
 import org.springframework.stereotype.Repository
 import reactor.core.publisher.Mono
+import java.math.BigDecimal
 import java.math.BigInteger
 
 
@@ -18,7 +19,7 @@ class R2DBCPaymentValidationRepository(
             .fetch()
             .first()
             .handle { row, sink ->
-                if((row["total_amount"] as BigInteger).toLong() == amount) {
+                if((row["total_amount"] as BigDecimal).toLong() == amount) {
                     sink.next(true)
                 }else{
                     sink.error(PaymentValidationException("결제(주문번호: $orderId) 금액: $amount 원과 일치하지 않습니다."))
@@ -28,7 +29,7 @@ class R2DBCPaymentValidationRepository(
     }
 
     companion object{
-        val SELECT_PAYMENT_TOTAL_AMOUNT_QUERY = """]
+        val SELECT_PAYMENT_TOTAL_AMOUNT_QUERY = """
             SELECT SUM(amount) as total_amount
             FROM payment_orders
             WHERE order_id = :orderId

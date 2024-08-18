@@ -47,7 +47,7 @@ class CheckoutServiceTest(
             }
             .verifyComplete();
 
-        val paymentEvent = paymentDatabaseHelper.getPayment(orderId)!!
+        val paymentEvent = paymentDatabaseHelper.getPayments(orderId)!!
 
         assertThat(paymentEvent.orderId).isEqualTo(orderId)
         assertThat(paymentEvent.totalAmount()).isEqualTo(60000)
