@@ -33,7 +33,7 @@ class CheckoutService (
                     sellerId = it.sellerId,
                     orderId = command.idempotencyKey,
                     productId = it.id,
-                    amount = it.amount,
+                    amount = it.amount.toLong(),
                     paymentStatus = PaymentStatus.NOT_STARTED,
                     buyerId = command.buyerId
                 )

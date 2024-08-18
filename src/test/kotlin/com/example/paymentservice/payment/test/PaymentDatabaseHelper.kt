@@ -5,6 +5,6 @@ import reactor.core.publisher.Mono
 
 interface PaymentDatabaseHelper {
 
-    fun getPayment(orderId: String): PaymentEvent?
+    fun getPayments(orderId: String): PaymentEvent?
     fun clean(): Mono<Void>
 }

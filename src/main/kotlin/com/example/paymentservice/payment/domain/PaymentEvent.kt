@@ -19,4 +19,11 @@ data class PaymentEvent(
     }
 
     fun isPaymentDone(): Boolean = isPaymentDone
+    fun isSuccess(): Boolean {
+        return paymentOrders.all { it.paymentStatus == PaymentStatus.SUCCESS }
+    }
+
+    fun isFailure(): Boolean {
+        return paymentOrders.all { it.paymentStatus == PaymentStatus.FAILURE || it.paymentStatus == PaymentStatus.UNKNOWN }
+    }
 }

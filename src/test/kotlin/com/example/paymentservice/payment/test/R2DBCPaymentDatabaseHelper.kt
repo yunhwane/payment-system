@@ -6,6 +6,7 @@ import org.springframework.transaction.reactive.TransactionalOperator
 import reactor.core.publisher.Mono
 import reactor.kotlin.core.publisher.toMono
 import java.math.BigDecimal
+import java.time.LocalDateTime
 import java.time.ZonedDateTime
 
 class R2DBCPaymentDatabaseHelper(
@@ -14,8 +15,7 @@ class R2DBCPaymentDatabaseHelper(
 ) : PaymentDatabaseHelper {
 
 
-
-    override fun getPayment(orderId: String): PaymentEvent? {
+    override fun getPayments(orderId: String): PaymentEvent? {
         return databaseClient.sql(SELECT_PAYMENT_QUERY)
             .bind("orderId", orderId)
             .fetch()
@@ -28,6 +28,16 @@ class R2DBCPaymentDatabaseHelper(
                         orderId = results.first()["order_id"] as String,
                         orderName = results.first()["order_name"] as String,
                         buyerId = results.first()["buyer_id"] as Long,
+                        paymentKey = results.first()["payment_key"] as String?,
+                        paymentType = if (results.first()["type"] != null) PaymentType.get(results.first()["type"] as String) else null,
+                        paymentMethod = if (results.first()["method"] != null) PaymentMethod.valueOf(results.first()["method"] as String) else null,
+                        approvedAt = results.first()["approved_at"]?.let {
+                            when (it) {
+                                is ZonedDateTime -> it.toLocalDateTime() // If it's a ZonedDateTime, convert to LocalDateTime
+                                is LocalDateTime -> it // If it's already a LocalDateTime, use it directly
+                                else -> throw IllegalArgumentException("Unexpected type for approved_at: ${it::class.java}")
+                            }
+                        },
                         isPaymentDone = ((results.first()["is_payment_done"] as Byte).toInt() == 1),
                         paymentOrders = results.map { result ->
                             PaymentOrder(
@@ -36,20 +46,24 @@ class R2DBCPaymentDatabaseHelper(
                                 sellerId = result["seller_id"] as Long,
                                 orderId = result["order_id"] as String,
                                 productId = result["product_id"] as Long,
-                                amount = result["amount"] as BigDecimal,
+                                amount = (result["amount"] as BigDecimal).toLong(),
                                 paymentStatus = PaymentStatus.get(result["payment_order_status"] as String),
                                 isLedgerUpdated = ((result["ledger_updated"]) as Byte).toInt() == 1,
                                 isWalletUpdated = ((result["wallet_updated"]) as Byte).toInt() == 1,
-                                buyerId = result["buyer_id"] as Long,
+                                buyerId = result["buyer_id"] as Long
                             )
                         }
                     )
                 }
-            }.toMono().block()
+            }
+            .toMono()
+            .block()
     }
 
+
     override fun clean(): Mono<Void> {
-        return deletePaymentOrders()
+        return deletePaymentOrderHistories()
+            .flatMap { deletePaymentOrders() }
             .flatMap { deletePaymentEvents() }
             .`as`(transactionalOperator::transactional)
             .then()
@@ -63,6 +77,12 @@ class R2DBCPaymentDatabaseHelper(
 
     private fun deletePaymentEvents(): Mono<Long> {
         return databaseClient.sql(DELETE_PAYMENT_EVENT_QUERY)
+            .fetch()
+            .rowsUpdated()
+    }
+
+    private fun deletePaymentOrderHistories(): Mono<Long> {
+        return databaseClient.sql(DELETE_PAYMENT_ORDER_HISTORY_QUERY)
             .fetch()
             .rowsUpdated()
     }
@@ -82,6 +102,10 @@ class R2DBCPaymentDatabaseHelper(
 
         val DELETE_PAYMENT_ORDER_QUERY = """
       DELETE FROM payment_orders
+    """.trimIndent()
+
+        val DELETE_PAYMENT_ORDER_HISTORY_QUERY = """
+        DELETE FROM payment_order_histories
     """.trimIndent()
     }
 }
