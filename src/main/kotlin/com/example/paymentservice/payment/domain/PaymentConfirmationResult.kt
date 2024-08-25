@@ -1,11 +1,9 @@
 package com.example.paymentservice.payment.domain
 
-import java.time.LocalDateTime
-
 
 data class PaymentConfirmationResult(
     val status: PaymentStatus,
-    val failure: PaymentExecutionFailure? = null
+    val failure: PaymentFailure? = null
 )
 {
     init {
