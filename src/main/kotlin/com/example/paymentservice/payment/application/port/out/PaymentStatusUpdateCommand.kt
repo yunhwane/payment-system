@@ -1,5 +1,6 @@
 package com.example.paymentservice.payment.application.port.out
 
+import com.example.paymentservice.payment.domain.PaymentExecutionResult
 import com.example.paymentservice.payment.domain.PaymentExtraDetails
 import com.example.paymentservice.payment.domain.PaymentFailure
 import com.example.paymentservice.payment.domain.PaymentStatus
@@ -12,6 +13,14 @@ data class PaymentStatusUpdateCommand (
     val failure: PaymentFailure? = null,
 
 ){
+
+    constructor(paymentExcutionResult: PaymentExecutionResult) : this(
+        paymentKey = paymentExcutionResult.paymentKey,
+        orderId = paymentExcutionResult.orderId,
+        status = paymentExcutionResult.paymentStatus(),
+        extraDetails = paymentExcutionResult.extraDetails,
+        failure = paymentExcutionResult.failure
+    )
 
     init {
         require(status == PaymentStatus.SUCCESS || status == PaymentStatus.FAILURE || status == PaymentStatus.UNKNOWN) {
